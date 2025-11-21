@@ -1,0 +1,275 @@
+- name: Configure VM with Graphical Desktop, RDP, Docker and Browser
+  hosts: all
+  become: yes
+  vars:
+    # User configuration
+    desktop_user: "kika1378"
+    rdp_port: 11330
+    browser_port: 90
+
+  tasks:
+    # ===== System Update =====
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Upgrade all packages
+      apt:
+        upgrade: dist
+        autoremove: yes
+        autoclean: yes
+
+
+    # ===== Install Desktop Environment =====
+    - name: Install XFCE desktop environment
+      apt:
+        name:
+          - xfce4
+          - xfce4-goodies
+          - dbus-x11
+          - x11-xserver-utils
+        state: present
+
+    # ===== Install and Configure XRDP =====
+    - name: Install XRDP
+      apt:
+        name:
+          - xrdp
+          - xorgxrdp
+        state: present
+
+    - name: Add xrdp user to ssl-cert group
+      user:
+        name: xrdp
+        groups: ssl-cert
+        append: yes
+
+    - name: Configure XRDP to use XFCE
+      copy:
+        dest: /etc/xrdp/startwm.sh
+        content: |
+          #!/bin/sh
+          if [ -r /etc/default/locale ]; then
+            . /etc/default/locale
+            export LANG LANGUAGE
+          fi
+
+          # Start XFCE session
+          startxfce4
+        mode: '0755'
+        backup: yes
+
+    - name: Configure XRDP port
+      lineinfile:
+        path: /etc/xrdp/xrdp.ini
+        regexp: '^port='
+        line: 'port={{ rdp_port }}'
+        backup: yes
+
+    - name: Enable and start XRDP service
+      systemd:
+        name: xrdp
+        enabled: yes
+        state: restarted
+
+    # ===== Install Docker =====
+    - name: Install required packages for Docker
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+          - software-properties-common
+        state: present
+
+    - name: Create directory for Docker GPG key
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: Add Docker GPG key
+      shell: |
+        curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+        chmod a+r /etc/apt/keyrings/docker.gpg
+      args:
+        creates: /etc/apt/keyrings/docker.gpg
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable"
+        state: present
+        filename: docker
+
+    - name: Install Docker
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+        update_cache: yes
+
+    - name: Add user to docker group
+      user:
+        name: "{{ desktop_user }}"
+        groups: docker
+        append: yes
+
+    - name: Enable and start Docker service
+      systemd:
+        name: docker
+        enabled: yes
+        state: started
+
+
+    # ===== Install Docker Compose (standalone) =====
+#    - name: Download Docker Compose
+ #     get_url:
+  #      url: https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64
+   #     dest: /usr/local/bin/docker-compose
+    #    mode: '0755'
+
+    # ===== Setup Browser in Docker =====
+    - name: Create browser container directory
+      file:
+        path: /opt/browser-container
+        state: directory
+        mode: '0755'
+
+    - name: Create Docker Compose file for browser
+      copy:
+        dest: /opt/browser-container/docker-compose.yml
+        content: |
+          version: '3.8'
+
+          services:
+            browser:
+              image: lscr.io/linuxserver/chromium:latest
+              container_name: web-browser
+              restart: unless-stopped
+              security_opt:
+                - seccomp:unconfined
+              environment:
+                - PUID=1000
+                - PGID=1000
+                - TZ=Europe/Vilnius
+                - CHROME_CLI=https://www.google.com
+              volumes:
+                - /opt/browser-container/config:/config
+              ports:
+                - "{{ browser_port }}:3000"
+                - "{{ browser_port }}1:3001"
+              shm_size: "2gb"
+
+    - name: Create browser config directory
+      file:
+        path: /opt/browser-container/config
+        state: directory
+        mode: '0755'
+        owner: "{{ desktop_user }}"
+
+    - name: Start browser container using Docker Compose CLI (V2)
+      ansible.builtin.command:
+        cmd: docker compose up -d
+        chdir: /opt/browser-container
+      register: docker_compose_output
+      changed_when: "'Creating web-browser' in docker_compose_output.stdout"
+    # ===== Install useful desktop applications =====
+    - name: Install additional useful packages
+      apt:
+        name:
+          - firefox-esr
+          - thunar
+          - mousepad
+          - xfce4-terminal
+          - network-manager-gnome
+          - pavucontrol
+          - htop
+          - curl
+          - wget
+          - git
+          - vim
+          - net-tools
+        state: present
+
+    # ===== Configure firewall (UFW) =====
+    - name: Install UFW
+      apt:
+        name: ufw
+        state: present
+
+    - name: Allow SSH
+      ufw:
+        rule: allow
+        port: '22'
+        proto: tcp
+
+    - name: Allow RDP
+      ufw:
+        rule: allow
+        port: '{{ rdp_port }}'
+        proto: tcp
+
+    - name: Allow browser port
+      ufw:
+        rule: allow
+        port: '{{ browser_port }}'
+        proto: tcp
+
+    - name: Enable UFW
+      ufw:
+        state: enabled
+        policy: deny
+
+    # ===== Create desktop shortcuts =====
+    - name: Create Desktop directory
+      file:
+        path: "/home/{{ desktop_user }}/Desktop"
+        state: directory
+        owner: "{{ desktop_user }}"
+        group: "{{ desktop_user }}"
+        mode: '0755'
+
+    - name: Create browser shortcut on desktop
+      copy:
+        dest: "/home/{{ desktop_user }}/Desktop/docker-browser.desktop"
+        content: |
+          [Desktop Entry]
+          Version=1.0
+          Type=Application
+          Name=Docker Browser
+          Comment=Access Chromium in Docker
+          Exec=firefox-esr http://localhost:{{ browser_port }}
+          Icon=web-browser
+          Terminal=false
+          Categories=Network;WebBrowser;
+        owner: "{{ desktop_user }}"
+        group: "{{ desktop_user }}"
+        mode: '0755'
+
+    # ===== Final system configuration =====
+    - name: Ensure services are enabled
+      systemd:
+        name: "{{ item }}"
+        enabled: yes
+        state: started
+      loop:
+        - docker
+        - xrdp
+
+  handlers:
+    - name: restart xrdp
+      systemd:
+        name: xrdp
+        state: restarted
+
+    - name: restart docker
+      systemd:
+        name: docker
+        state: restarted
