@@ -3,8 +3,8 @@
   become: yes
   vars:
     # User configuration
-    desktop_user: "kika1378"
-    rdp_port: 11330
+    desktop_user: "client"
+    desktop_password: "client"
     browser_port: 90
 
   tasks:
@@ -20,6 +20,40 @@
         autoremove: yes
         autoclean: yes
 
+    # ===== Detect RDP Port =====
+    - name: Detect current RDP/XRDP port (checking what's listening on 3389)
+      shell: |
+        # Check if xrdp is already running and get its port
+        if systemctl is-active --quiet xrdp; then
+          grep "^port=" /etc/xrdp/xrdp.ini 2>/dev/null | cut -d'=' -f2 || echo "3389"
+        else
+          echo "3389"
+        fi
+      register: detected_rdp_port
+      changed_when: false
+
+    - name: Set RDP port variable
+      set_fact:
+        rdp_port: "{{ detected_rdp_port.stdout | default('3389') }}"
+
+    - name: Display detected RDP port
+      debug:
+        msg: "Using RDP port: {{ rdp_port }} (internal port, check your VM port forwarding for external access)"
+
+    # ===== Create Desktop User =====
+    - name: Create desktop user
+      user:
+        name: "{{ desktop_user }}"
+        password: "{{ desktop_password | password_hash('sha512') }}"
+        shell: /bin/bash
+        create_home: yes
+        state: present
+
+    - name: Add user to sudo group
+      user:
+        name: "{{ desktop_user }}"
+        groups: sudo
+        append: yes
 
     # ===== Install Desktop Environment =====
     - name: Install XFCE desktop environment
@@ -64,7 +98,7 @@
       lineinfile:
         path: /etc/xrdp/xrdp.ini
         regexp: '^port='
-        line: 'port={{ rdp_port }}'
+        line: 'port=3389'
         backup: yes
 
     - name: Enable and start XRDP service
@@ -210,10 +244,10 @@
         port: '22'
         proto: tcp
 
-    - name: Allow RDP
+    - name: Allow RDP (internal port 3389)
       ufw:
         rule: allow
-        port: '{{ rdp_port }}'
+        port: '3389'
         proto: tcp
 
     - name: Allow browser port
@@ -262,6 +296,60 @@
       loop:
         - docker
         - xrdp
+
+    # ===== Save RDP port information =====
+    - name: Get external SSH port from Ansible connection
+      set_fact:
+        external_ssh_port: "{{ ansible_port | default('22') }}"
+
+    - name: Save connection information to file
+      copy:
+        content: |
+          VM Connection Information
+          =========================
+          
+          INTERNAL PORTS (inside VM):
+          - SSH: 22
+          - RDP/XRDP: 3389
+          - Browser: {{ browser_port }}
+          
+          EXTERNAL PORTS (for connection):
+          - SSH: {{ external_ssh_port }}
+          - RDP: Check your VM port forwarding (3389 -> external port)
+          - Browser: Check your VM port forwarding ({{ browser_port }} -> external port)
+          
+          LOGIN CREDENTIALS:
+          - Username: {{ desktop_user }}
+          - Password: {{ desktop_password }}
+          
+          NOTE: Your VM uses port forwarding. To connect via RDP, use the EXTERNAL port 
+          that forwards to internal port 3389. Check your VM configuration for the exact mapping.
+          
+          Example from your setup: 8957:3389 means external port 8957 connects to internal 3389
+        dest: /root/connection_info.txt
+        mode: '0600'
+
+    - name: Display connection information
+      debug:
+        msg:
+          - "============================================"
+          - "Configuration Complete!"
+          - "============================================"
+          - "INTERNAL CONFIGURATION:"
+          - "  SSH Port: 22"
+          - "  RDP Port: 3389"
+          - "  Browser Port: {{ browser_port }}"
+          - ""
+          - "LOGIN CREDENTIALS:"
+          - "  Username: {{ desktop_user }}"
+          - "  Password: {{ desktop_password }}"
+          - ""
+          - "IMPORTANT: Your VM uses PORT FORWARDING"
+          - "To connect, check your VM's external port mapping!"
+          - "Example: If mapping is 8957:3389, connect to port 8957"
+          - "============================================"
+          - "Info saved to: /root/connection_info.txt"
+          - "============================================"
 
   handlers:
     - name: restart xrdp
