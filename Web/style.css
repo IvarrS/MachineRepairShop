@@ -1,0 +1,136 @@
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+    margin: 0;
+    padding: 0;
+}
+
+header {
+    background: #222;
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+nav {
+    background: #333;
+    display: flex;
+    justify-content: center;
+}
+
+nav a {
+    color: white;
+    padding: 15px 20px;
+    text-decoration: none;
+    display: block;
+}
+
+nav a:hover {
+    background: #555;
+}
+
+.container {
+    max-width: 900px;
+    margin: auto;
+    padding: 20px;
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+}
+
+
+
+/* ---- Repair page additions ---- */
+
+/* form inputs (if your stylesheet doesn't already style inputs) */
+input, textarea, select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #e3e6ea;
+  border-radius: 8px;
+  font-size: 14px;
+  margin: 6px 0;
+  background: #fff;
+  color: #222;
+}
+
+/* Card specific for car-top */
+.car-top {
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  padding: 18px;
+  border-radius: 8px;
+}
+
+/* Car body container */
+.car-top .car-body {
+  width: 320px;
+  background: linear-gradient(180deg,#dfe7ff,#e9f0ff);
+  border-radius: 16px;
+  padding: 12px;
+  text-align:center;
+  box-shadow: 0 4px 12px rgba(16,24,40,0.06);
+}
+
+/* rows inside car */
+.car-top .row { display:flex; justify-content:space-between; gap:12px; margin:8px 0; }
+
+/* hotspot buttons: visual squares inside the car */
+.car-top .hotspot {
+  border: 1px solid rgba(0,0,0,0.06);
+  background: rgba(255,255,255,0.88);
+  padding: 10px;
+  flex: 1;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight:700;
+  transition: transform .08s ease, box-shadow .08s ease;
+  user-select: none;
+}
+
+/* engine/exhaust are full-width buttons */
+.car-top .hotspot[data-area="engine"],
+.car-top .hotspot[data-area="exhaust"] {
+  display:block;
+  width:100%;
+  margin:6px 0;
+}
+
+/* selected state */
+.car-top .hotspot.selected {
+  background: linear-gradient(180deg,#fff6e6,#fff0d6);
+  border: 1px solid #f0b24f;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(240,178,79,0.14);
+}
+
+/* smaller text inside each button for mobile */
+.car-top .hotspot { font-size:13px; }
+
+/* ensure the card looks nice on small screens */
+@media (max-width:900px) {
+  .card > .container, .container { padding: 12px; }
+  .car-top .car-body { width: 280px; }
+}
+
+form input, 
+form select, 
+form textarea {
+    margin-bottom: 12px;
+    padding: 10px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.form-row {
+    margin-bottom: 20px; /* space between rows */
+}
+
+.car-map button {
+    margin: 5px; /* spacing between car map buttons */
+}

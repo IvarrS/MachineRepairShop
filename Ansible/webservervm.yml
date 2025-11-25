@@ -1,0 +1,45 @@
+- name: Create and set-up webserver VM (provision)
+  hosts: localhost
+  gather_facts: yes
+  vars_files:
+    - secrets.yml
+
+  tasks:
+    - name: Create VM, extract variables
+      one_vm:
+        api_url: "https://grid5.mif.vu.lt/cloud3/RPC2"
+        api_username: "{{ webservervm_user }}"
+        api_password: "{{ webservervm_pass }}"
+        template_id: 1737
+        count: 1
+        cpu: 1
+        memory: 1 GB
+        disk_size: 10 GB
+        state: present
+        wait: yes
+        attributes:
+          name: webserver-vm
+          TCP_PORT_FORWARDING: "80"
+      register: result
+
+    - name: VM info
+      debug:
+        var: result  # note - missing TCP port field until VM fully bootstraps
+
+    - name: Set convenient variables
+      set_fact:
+        vm_id: "{{ result.instances[0].vm_id }}"
+        vm_private_ip: "{{ result.instances[0].networks[0].ip }}"
+        vm_owner_name: "{{ result.instances[0].owner_name }}"
+
+    - name: Wait for full bootstrap. TCP port opening as indicator
+      wait_for:
+        host: "{{ vm_private_ip }}"
+        port: 22
+        timeout: 300
+
+    - name: Show parsed VM details
+      debug:
+        msg: >
+          VM {{ vm_id }} is running at IP {{ vm_private_ip }},
+          owned by {{ vm_owner_name }}
