@@ -3,7 +3,7 @@
 sudo apt-get install opennebula-tools
 sudo apt update
 sudo apt install -y python3 python3-pip git
-pip3 install ansible pyone
+sudo pip3 install ansible pyone
 sudo apt install gnupg
 
 set -e
