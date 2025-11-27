@@ -1,8 +1,10 @@
-- name: Create and set-up webserver VM (provision)
+- name: Create and set-up database VM
   hosts: localhost
   gather_facts: yes
   vars_files:
     - secrets.yml
+  vars:
+    ansible_python_interpreter: "/home/aisi7936/MachineRepairShop/Ansible/venv/bin/python3" 
 
   tasks:
     - name: Create VM, extract variables
@@ -18,7 +20,7 @@
         state: present
         wait: yes
         attributes:
-          name: webserver-vm
+          name: db-vm
           TCP_PORT_FORWARDING: "80"
       register: result
 
@@ -42,18 +44,16 @@
       debug:
         msg: >
           VM {{ vm_id }} is running at IP {{ vm_private_ip }},
-          owned by {{ vm_owner_name }}
+          owned by {{ vm_owner_name }}\
+  
+    - name: Add VM to DB host group
+      add_host:
+        name: "{{ vm_private_ip }}"
+        groups: DB
 
-    - name: Get TCP port forwarding from onevm show
-      expect: 
-        command: >
-          onevm show {{ vm_id }} --user {{ nebula_user }} --endpoint https://grid5.mif.vu.lt/cloud3/RPC2
-        responses:
-          "Password:": "{{ nebula_password }}"
-        register: vm_show_output
-
-    - name: Extract host forwarded port if present
+    - name: Define SSH connection details for DB VM
       set_fact:
-        host_forward_port: >
-          {{ (vm_show_output.stdout | default('')) | regex_search('TCP_PORT_FORWARDING=\\\"?([0-9]+)(?::[0-9]+)?\\\"?', '\\1') }}
-      when: vm_show_output is defined
+        ansible_user: ubuntu
+
+
+
