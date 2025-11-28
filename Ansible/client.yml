@@ -6,6 +6,7 @@
     - secrets.yml
   vars:
     # User configuration
+    ansible_python_interpreter: "/home/aisi7936/.ansible-venv/bin/python3" 
     desktop_user: "client"
     desktop_password: "client"
     browser_port: 90
@@ -436,3 +437,4 @@
           - "Connection info saved to: /root/connection_info.txt"
           - ""
           - "============================================"
+
