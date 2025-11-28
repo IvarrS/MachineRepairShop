@@ -121,6 +121,12 @@
           - python3-docker
         state: present
         update_cache: yes
+    - name: Copy SQL data
+      copy:
+        src: data.sql
+        dest: /home/{{ ansible_user }}/data.sql
+        mode: '0644'    
+
 
     - name: Run MariaDB Docker Container
       community.docker.docker_container:
@@ -133,3 +139,6 @@
           MARIADB_DATABASE: "{{ db_name }}"
         published_ports:
           - "3306:3306"
+        volumes:
+          - /home/{{ ansible_user }}/data.sql:/docker-entrypoint-initdb.d/data.sql
+
