@@ -1,12 +1,78 @@
-- name: Configure VM with Graphical Desktop, RDP, Docker and Browser
-  hosts: all
-  become: yes
+---
+- name: Provision VM on OpenNebula
+  hosts: localhost
+  gather_facts: yes
+  vars_files:
+    - secrets.yml
   vars:
     # User configuration
     desktop_user: "client"
     desktop_password: "client"
     browser_port: 90
+    
+  tasks:
+    - name: Create VM with port forwarding
+      one_vm:
+        api_url: "https://grid5.mif.vu.lt/cloud3/RPC2"
+        api_username: "{{ client_user }}"
+        api_password: "{{ client_pass }}"
+        template_id: 3001
+        count: 1
+        cpu: 1
+        memory: 4 GB
+        disk_size: 10 GB
+        state: present
+        wait: yes
+        attributes:
+          name: desktop-vm
+          TCP_PORT_FORWARDING: "22,3389,{{ browser_port }}"
+      register: vm_result
+      
+    - name: Display VM creation result
+      debug:
+        var: vm_result
+        
+    - name: Extract VM information
+      set_fact:
+        vm_id: "{{ vm_result.instances[0].vm_id }}"
+        vm_private_ip: "{{ vm_result.instances[0].networks[0].ip }}"
+        vm_owner_name: "{{ vm_result.instances[0].owner_name }}"
+        
+    - name: Wait for SSH to become available
+      wait_for:
+        host: "{{ vm_private_ip }}"
+        port: 22
+        timeout: 300
+        delay: 10
+        
+    - name: Display VM details
+      debug:
+        msg:
+          - "VM ID: {{ vm_id }}"
+          - "Private IP: {{ vm_private_ip }}"
+          - "Owner: {{ vm_owner_name }}"
+          - "Waiting additional time for VM to fully initialize..."
+          
+    - name: Add VM to inventory
+      add_host:
+        name: "{{ vm_private_ip }}"
+        groups: provisioned_vms
+        ansible_user: root
+        ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
 
+    - name: Wait for VM to be fully ready
+      pause:
+        seconds: 30
+
+- name: Configure VM with Desktop Environment
+  hosts: provisioned_vms
+  become: yes
+  gather_facts: yes
+  vars:
+    desktop_user: "client"
+    desktop_password: "client"
+    browser_port: 90
+    
   tasks:
     # ===== System Update =====
     - name: Update apt cache
@@ -19,26 +85,6 @@
         upgrade: dist
         autoremove: yes
         autoclean: yes
-
-    # ===== Detect RDP Port =====
-    - name: Detect current RDP/XRDP port (checking what's listening on 3389)
-      shell: |
-        # Check if xrdp is already running and get its port
-        if systemctl is-active --quiet xrdp; then
-          grep "^port=" /etc/xrdp/xrdp.ini 2>/dev/null | cut -d'=' -f2 || echo "3389"
-        else
-          echo "3389"
-        fi
-      register: detected_rdp_port
-      changed_when: false
-
-    - name: Set RDP port variable
-      set_fact:
-        rdp_port: "{{ detected_rdp_port.stdout | default('3389') }}"
-
-    - name: Display detected RDP port
-      debug:
-        msg: "Using RDP port: {{ rdp_port }} (internal port, check your VM port forwarding for external access)"
 
     # ===== Create Desktop User =====
     - name: Create desktop user
@@ -161,14 +207,6 @@
         enabled: yes
         state: started
 
-
-    # ===== Install Docker Compose (standalone) =====
-#    - name: Download Docker Compose
- #     get_url:
-  #      url: https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64
-   #     dest: /usr/local/bin/docker-compose
-    #    mode: '0755'
-
     # ===== Setup Browser in Docker =====
     - name: Create browser container directory
       file:
@@ -206,15 +244,17 @@
         path: /opt/browser-container/config
         state: directory
         mode: '0755'
-        owner: "{{ desktop_user }}"
+        owner: "1000"
+        group: "1000"
 
-    - name: Start browser container using Docker Compose CLI (V2)
-      ansible.builtin.command:
+    - name: Start browser container
+      command:
         cmd: docker compose up -d
         chdir: /opt/browser-container
       register: docker_compose_output
-      changed_when: "'Creating web-browser' in docker_compose_output.stdout"
-    # ===== Install useful desktop applications =====
+      changed_when: "'Creating web-browser' in docker_compose_output.stdout or 'Started' in docker_compose_output.stdout"
+
+    # ===== Install Desktop Applications =====
     - name: Install additional useful packages
       apt:
         name:
@@ -232,7 +272,7 @@
           - net-tools
         state: present
 
-    # ===== Configure firewall (UFW) =====
+    # ===== Configure Firewall =====
     - name: Install UFW
       apt:
         name: ufw
@@ -244,7 +284,7 @@
         port: '22'
         proto: tcp
 
-    - name: Allow RDP (internal port 3389)
+    - name: Allow RDP
       ufw:
         rule: allow
         port: '3389'
@@ -261,7 +301,7 @@
         state: enabled
         policy: deny
 
-    # ===== Create desktop shortcuts =====
+    # ===== Create Desktop Shortcuts =====
     - name: Create Desktop directory
       file:
         path: "/home/{{ desktop_user }}/Desktop"
@@ -287,77 +327,112 @@
         group: "{{ desktop_user }}"
         mode: '0755'
 
-    # ===== Final system configuration =====
-    - name: Ensure services are enabled
-      systemd:
-        name: "{{ item }}"
-        enabled: yes
-        state: started
-      loop:
-        - docker
-        - xrdp
+    # ===== Get Port Forwarding Information =====
+    - name: Get VM information from OpenNebula
+      delegate_to: localhost
+      uri:
+        url: "https://grid5.mif.vu.lt/cloud3/RPC2"
+        method: POST
+        body_format: raw
+        headers:
+          Content-Type: "text/xml"
+        body: |
+          <?xml version="1.0"?>
+          <methodCall>
+            <methodName>one.vm.info</methodName>
+            <params>
+              <param><value><string>{{ client_user }}:{{ client_pass }}</string></value></param>
+              <param><value><int>{{ hostvars['localhost']['vm_id'] }}</int></value></param>
+            </params>
+          </methodCall>
+        return_content: yes
+        validate_certs: yes
+      register: vm_info
+      vars:
+        client_user: "{{ hostvars['localhost']['client_user'] }}"
+        client_pass: "{{ hostvars['localhost']['client_pass'] }}"
 
-    # ===== Save RDP port information =====
-    - name: Get external SSH port from Ansible connection
-      set_fact:
-        external_ssh_port: "{{ ansible_port | default('22') }}"
-
+    # ===== Save Connection Information =====
     - name: Save connection information to file
       copy:
         content: |
-          VM Connection Information
-          =========================
+          ================================================
+          VM DESKTOP ENVIRONMENT - CONNECTION INFORMATION
+          ================================================
           
-          INTERNAL PORTS (inside VM):
+          VM Details:
+          -----------
+          VM ID: {{ hostvars['localhost']['vm_id'] }}
+          Private IP: {{ inventory_hostname }}
+          Owner: {{ hostvars['localhost']['vm_owner_name'] }}
+          
+          Internal Ports (inside VM):
+          ---------------------------
           - SSH: 22
           - RDP/XRDP: 3389
           - Browser: {{ browser_port }}
           
-          EXTERNAL PORTS (for connection):
-          - SSH: {{ external_ssh_port }}
-          - RDP: Check your VM port forwarding (3389 -> external port)
-          - Browser: Check your VM port forwarding ({{ browser_port }} -> external port)
+          Login Credentials:
+          -----------------
+          Username: {{ desktop_user }}
+          Password: {{ desktop_password }}
           
-          LOGIN CREDENTIALS:
-          - Username: {{ desktop_user }}
-          - Password: {{ desktop_password }}
+          Connection Instructions:
+          -----------------------
+          1. RDP Connection:
+             - Check your VM's external port forwarding for port 3389
+             - Connect using: <external_ip>:<external_rdp_port>
+             - Use the credentials above
           
-          NOTE: Your VM uses port forwarding. To connect via RDP, use the EXTERNAL port 
-          that forwards to internal port 3389. Check your VM configuration for the exact mapping.
+          2. Browser Access:
+             - Check your VM's external port forwarding for port {{ browser_port }}
+             - Open in browser: http://<external_ip>:<external_browser_port>
           
-          Example from your setup: 8957:3389 means external port 8957 connects to internal 3389
+          3. SSH Access:
+             - Check your VM's external port forwarding for port 22
+             - Connect using: ssh {{ desktop_user }}@<external_ip> -p <external_ssh_port>
+          
+          Important Notes:
+          ---------------
+          - Your VM uses PORT FORWARDING
+          - Internal ports (22, 3389, {{ browser_port }}) are mapped to external ports
+          - Check OpenNebula VM details for exact external port mappings
+          - Example: If mapping shows 8957:3389, use port 8957 to connect via RDP
+          
+          Services Running:
+          ----------------
+          - XFCE Desktop Environment
+          - XRDP (Remote Desktop)
+          - Docker with Chromium browser container
+          - UFW Firewall (enabled)
+          
+          Configuration Date: {{ ansible_date_time.iso8601 }}
+          ================================================
         dest: /root/connection_info.txt
         mode: '0600'
 
-    - name: Display connection information
+    - name: Display final connection information
       debug:
         msg:
           - "============================================"
-          - "Configuration Complete!"
+          - "       CONFIGURATION COMPLETED!"
           - "============================================"
-          - "INTERNAL CONFIGURATION:"
-          - "  SSH Port: 22"
-          - "  RDP Port: 3389"
-          - "  Browser Port: {{ browser_port }}"
           - ""
-          - "LOGIN CREDENTIALS:"
+          - "VM ID: {{ hostvars['localhost']['vm_id'] }}"
+          - "Private IP: {{ inventory_hostname }}"
+          - ""
+          - "CREDENTIALS:"
           - "  Username: {{ desktop_user }}"
           - "  Password: {{ desktop_password }}"
           - ""
-          - "IMPORTANT: Your VM uses PORT FORWARDING"
-          - "To connect, check your VM's external port mapping!"
-          - "Example: If mapping is 8957:3389, connect to port 8957"
+          - "SERVICES CONFIGURED:"
+          - "  ✓ XFCE Desktop Environment"
+          - "  ✓ XRDP Remote Desktop (port 3389)"
+          - "  ✓ Docker with Browser (port {{ browser_port }})"
+          - "  ✓ UFW Firewall"
+          - ""
+          - "IMPORTANT:"
+          - "Check OpenNebula for external port mappings!"
+          - "Connection info saved to: /root/connection_info.txt"
+          - ""
           - "============================================"
-          - "Info saved to: /root/connection_info.txt"
-          - "============================================"
-
-  handlers:
-    - name: restart xrdp
-      systemd:
-        name: xrdp
-        state: restarted
-
-    - name: restart docker
-      systemd:
-        name: docker
-        state: restarted
