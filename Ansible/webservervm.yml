@@ -1,8 +1,11 @@
+---
 - name: Create and set-up webserver VM (provision)
   hosts: localhost
   gather_facts: yes
   vars_files:
     - secrets.yml
+  vars:
+    ansible_python_interpreter: "/home/joju0195/.ansible-venv/bin/python3"
 
   tasks:
     - name: Create VM, extract variables
@@ -24,7 +27,7 @@
 
     - name: VM info
       debug:
-        var: result  # note - missing TCP port field until VM fully bootstraps
+        var: result
 
     - name: Set convenient variables
       set_fact:
@@ -88,7 +91,7 @@
 - name: Set up and run docker on vm #task sequence provided by https://docs.docker.com/engine/install/ubuntu/
   hosts: webserver_vm
   vars_files:
-    - vault.yml
+    - secrets.yml
   gather_facts: no
   become: yes
   vars:
@@ -153,11 +156,6 @@
 
     - name: Copy files to the VM
       copy:
-        src: "/home/autu1151/ex.yaml"
-        dest: "/home/autu1151/ex.yaml"
+        src: "/home/joju0195/Machinerepairshop/"
+        dest: "/home/autu1151/Machinereparishop/"
         mode: '0644'
-
-    - name: Run Docker Compose services
-      command: docker compose up -d --build
-      args:
-        chdir: "/home/{{ webserver_username }}/sample-project"
