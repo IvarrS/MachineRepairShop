@@ -156,6 +156,12 @@
 
     - name: Copy files to the VM
       copy:
-        src: "/home/joju0195/Machinerepairshop/"
-        dest: "/home/autu1151/Machinereparishop/"
+        src: "/home/autu1151/test/MachineRepairShop/Misc/webserver_vm"
+        dest: "/home/autu1151/MachineRepairShop/Misc"
+        mode: '0644'
+
+    - name: Copy files to the VM2
+      copy:
+        src: "/home/autu1151/test/MachineRepairShop/Web"
+        dest: "/home/autu1151/MachineRepairShop"
         mode: '0644'
