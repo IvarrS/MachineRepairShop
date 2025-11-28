@@ -46,9 +46,9 @@
 
     - name: onevm show extra info
       expect:
-        command: "onevm show {{ vm_id }} --user {{ nebula_user }} --endpoint https://grid5.mif.vu.lt/cloud3/RPC2"
+        command: "onevm show {{ vm_id }} --user {{ webservervm_user }} --endpoint https://grid5.mif.vu.lt/cloud3/RPC2"
         responses:
-          "Password:": "{{ nebula_password }}"
+          "Password:": "{{ webservervm_pass }}"
       register: result2
 
     - name: Extract public IP and TCP forwarding port
@@ -81,7 +81,7 @@
         groups: webserver_vm
 
     - name: Copy SSH public key to the VM # one usr account must contain [PASSWORD] variable, as well as [PASSWORD] must be contained in vault
-      shell: sshpass -p "{{ sudo_password }}" ssh-copy-id -o StrictHostKeyChecking=no "{{ webservervm_user }}"@"{{ vm_private_ip }}"
+      shell: sshpass -p "{{ webserver_sudo_password }}" ssh-copy-id -o StrictHostKeyChecking=no "{{ webservervm_user }}"@"{{ vm_private_ip }}"
 
 
 
