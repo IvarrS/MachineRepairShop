@@ -38,6 +38,8 @@
         vm_id: "{{ vm_result.instances[0].vm_id }}"
         vm_private_ip: "{{ vm_result.instances[0].networks[0].ip }}"
         vm_owner_name: "{{ vm_result.instances[0].owner_name }}"
+        desktop_user: "{{ vm_login_user }}"
+        desktop_password: "{{ vm_login_pass }}"
         
     - name: Wait for SSH to become available
       wait_for:
@@ -54,12 +56,20 @@
           - "Owner: {{ vm_owner_name }}"
           - "Waiting additional time for VM to fully initialize..."
           
-    - name: Add VM to inventory
+    - name: Add VM to inventory (using password for initial connection)
       add_host:
         name: "{{ vm_private_ip }}"
         groups: provisioned_vms
-        ansible_user: root
+        ansible_user: "{{ desktop_user }}" 
+        ansible_password: "{{ desktop_password }}"
         ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+
+    - name: Copy SSH public key to the VM (Enable key authentication)
+      ansible.posix.ssh_key:
+        user: "{{ desktop_user }}"
+        host: "{{ vm_private_ip }}"
+        state: present
+        key_file: "~/.ssh/id_rsa.pub"
 
     - name: Wait for VM to be fully ready
       pause:
@@ -70,9 +80,10 @@
   become: yes
   gather_facts: yes
   vars:
-    desktop_user: "client"
-    desktop_password: "client"
+    desktop_user: "{{ hostvars['localhost']['desktop_user'] }}"
+    desktop_password: "{{ hostvars['localhost']['desktop_password'] }}"
     browser_port: 90
+    ansible_become_pass: "{{ desktop_password }}"
     
   tasks:
     # ===== System Update =====
@@ -437,4 +448,5 @@
           - "Connection info saved to: /root/connection_info.txt"
           - ""
           - "============================================"
+
 
