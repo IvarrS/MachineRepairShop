@@ -163,7 +163,7 @@
     - name: Copy files to the VM2
       copy:
         src: "/home/joju0195/MachineRepairShop/Web"
-        dest: "/home/{{ webservervm_user }}/MachineRepairShop"
+        dest: "/home/{{ webservervm_user }}/MachineRepairShop/Misc/webserver_vm"
         mode: '0644'
 
     - name: Run Docker Compose services
