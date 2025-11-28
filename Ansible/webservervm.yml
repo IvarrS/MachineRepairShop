@@ -77,11 +77,11 @@
 
     - name: Add temp host dinamically
       add_host:
-        name: "{{ nebula_user }}@{{ vm_private_ip }}"
+        name: "{{ webservervm_user }}@{{ vm_private_ip }}"
         groups: webserver_vm
 
     - name: Copy SSH public key to the VM # one usr account must contain [PASSWORD] variable, as well as [PASSWORD] must be contained in vault
-      shell: sshpass -p "{{ sudo_password }}" ssh-copy-id -o StrictHostKeyChecking=no "{{ nebula_user }}"@"{{ vm_private_ip }}"
+      shell: sshpass -p "{{ sudo_password }}" ssh-copy-id -o StrictHostKeyChecking=no "{{ webservervm_user }}"@"{{ vm_private_ip }}"
 
 
 
@@ -92,7 +92,7 @@
   gather_facts: no
   become: yes
   vars:
-    ansible_become_pass: "{{ sudo_password }}"
+    ansible_become_pass: "{{ webserver_sudo_password }}"
     ansible_shell_executable: /bin/sh
 
 
@@ -156,3 +156,8 @@
         src: "/home/autu1151/ex.yaml"
         dest: "/home/autu1151/ex.yaml"
         mode: '0644'
+
+    - name: Run Docker Compose services
+      command: docker compose up -d --build
+      args:
+        chdir: "/home/{{ webserver_username }}/sample-project"
