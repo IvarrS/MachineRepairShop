@@ -5,14 +5,14 @@
   vars_files:
     - secrets.yml
   vars:
-    ansible_python_interpreter: "/home/aisi7936/MachineRepairShop/Ansible/venv/bin/python3"
+    ansible_python_interpreter: "/home/joju0195/.ansible-venv/bin/python3"
     vm_password: "db"
     template_id: 3036
 
   tasks:
     - name: Ensure SSH key exists
       community.crypto.openssh_keypair:
-        path: "/home/aisi7936/.ssh/id_ed25519"
+        path: "/home/joju0195/.ssh/id_ed25519"
         type: ed25519
         state: present
 
@@ -42,7 +42,7 @@
     - name: Install SSH key
       command: >
         sshpass -p "{{ vm_password }}"
-        ssh-copy-id -i "/home/aisi7936/.ssh/id_ed25519.pub"
+        ssh-copy-id -i "/home/joju0195/.ssh/id_ed25519.pub"
         -o StrictHostKeyChecking=no
         {{ db_username }}@{{ vm_private_ip }}
 
@@ -51,7 +51,7 @@
         name: "{{ vm_private_ip }}"
         groups: DB
         ansible_user: "{{ db_username }}"
-        ansible_ssh_private_key_file: "/home/aisi7936/.ssh/id_ed25519"
+        ansible_ssh_private_key_file: "/home/joju0195/.ssh/id_ed25519"
         ansible_ssh_common_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
         ansible_become: yes
         ansible_become_password: "{{ db_sudo_password }}"
