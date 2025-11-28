@@ -1,11 +1,25 @@
-- hosts: DB
-  become: true
+- name: Create DB users for each webserver
+  hosts: DB
+  gather_facts: no
+  vars_files:
+    - secrets.yml
+
   tasks:
-    - name: Create DB user for webserver
+    - name: Install PyMySQL on DB server
+      become: yes
+      apt:
+        name: python3-pymysql
+        state: present
+
+    - name: Create DB user for each webserver
       community.mysql.mysql_user:
+        login_user: root
+        login_password: "dbpassword"
+        login_host: "127.0.0.1"
         name: "{{ hostvars[item].webservervm_user }}"
         host: "{{ hostvars[item].vm_private_ip }}"
         password: "db"
         priv: "*.*:ALL"
         state: present
       loop: "{{ groups['webserver_vm'] }}"
+      delegate_to: "{{ inventory_hostname }}"
