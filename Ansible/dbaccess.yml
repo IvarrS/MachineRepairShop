@@ -1,0 +1,11 @@
+- hosts: DB
+  become: true
+  tasks:
+    - name: Create DB user for webserver
+      community.mysql.mysql_user:
+        name: "{{ hostvars[item].webservervm_user }}"
+        host: "{{ hostvars[item].vm_private_ip }}"
+        password: "db"
+        priv: "*.*:ALL"
+        state: present
+      loop: "{{ groups['webserver_vm'] }}"
