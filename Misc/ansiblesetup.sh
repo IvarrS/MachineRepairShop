@@ -59,9 +59,6 @@ else
     echo "Repository already exists at $HOME/MachineRepairShop"
 fi
 
-echo "=== Making ansiblesetup.sh executable ==="
-chmod +x "$HOME/MachineRepairShop/Ansible/ansiblesetup.sh"
-
 cd MachineRepairShop/Ansible
 
 ansible-playbook main.yml -i inv.ini --vault-password-file password
