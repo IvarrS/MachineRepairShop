@@ -18,38 +18,55 @@
     <a href="services.html">Services</a>
     <a href="diagnostics.html">Diagnostics</a>
     <a href="contacts.html">Contacts</a>
-    <a href="repair.html">Repair Registration</a>
+    <a href="repair.html" class="active">Repair Registration</a>
 </nav>
-  </div>
-</header>
 
+<div class="container" style="display:flex; gap:20px; align-items:flex-start; flex-wrap:wrap;">
 
-<!-- Page container -->
-<div class="container">
-  <div class="card">
-    <h1 style="text-align:center; font-size:40px; margin:6px 0 12px">Registracija į servisą</h1>
-    <p style="text-align:center; color:#555; margin-top:0">Užpildykite formą žemiau — mes susisieksime per 2 darbo valandas</p>
-  </div>
+    <!-- LEFT: Repair form -->
+    <div class="card" style="flex:2; min-width:320px;">
+      <h2>Repair Registration</h2>
+      <p>Fill the form and choose the area of the car that needs attention. We’ll contact you to confirm the appointment.</p>
 
-  <div class="card" style="display:grid; grid-template-columns: 1fr 480px; gap:18px; align-items:start;">
-    <!-- LEFT: FORM -->
-    <div>
       <form id="repairForm">
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-          <input id="firstName" placeholder="Vardas" required maxlength="12"/>
-          <input id="lastName" placeholder="Pavardė" required maxlength="12"/>
-          <input id="plate" placeholder="Valstybinis numeris (pvz. ABC123)" required maxlength="10"/>
-          <input id="phone" placeholder="Tel. numeris (pvz. 37061234567)" required maxlength="12" />
+        <div class="form-row">
+          <label for="firstName">First name</label>
+          <input id="firstName" type="text" placeholder="Jonas" required>
         </div>
 
-        <div style="margin-top:12px;">
-          <label style="font-weight:700; display:block; margin-bottom:8px">Pasirinkite simptomus</label>
-          <label><input type="checkbox" name="symptom" value="strange_noise"> Neįprasti garsai</label><br>
-          <label><input type="checkbox" name="symptom" value="warning_light"> Įspėjamieji pranešimai prietaisų skydelyje</label><br>
-          <label><input type="checkbox" name="symptom" value="hard_start"> Sunkiai užsiveda</label><br>
-          <label><input type="checkbox" name="symptom" value="vibrations"> Vibracijos vairuojant</label><br>
-          <label><input type="checkbox" name="symptom" value="overheating"> Variklio perkaitimas</label><br>
-          <label><input type="checkbox" name="symptom" value="brake_noise"> Stabdžių triukšmas</label><br>
+        <div class="form-row">
+          <label for="lastName">Last name</label>
+          <input id="lastName" type="text" placeholder="Jonaitis" required>
+        </div>
+
+        <div class="form-row">
+          <label for="plate">Plate number</label>
+          <input id="plate" type="text" placeholder="ABC123" required>
+        </div>
+
+        <div class="form-row">
+          <label for="phone">Phone</label>
+          <input id="phone" type="text" placeholder="860000000" required>
+        </div>
+
+        <div class="form-row">
+          <label for="description">Short description of problem</label>
+          <textarea id="description" rows="4" placeholder="Describe strange noises, lights, vibrations..."></textarea>
+        </div>
+
+        <div class="form-row">
+          <strong>Selected area:</strong>
+          <span id="pickedArea">Nenurodyta</span>
+        </div>
+
+        <div class="form-row">
+          <h3>Symptoms</h3>
+          <label><input type="checkbox" name="symptom" value="engine_knock"> Engine knocking</label><br>
+          <label><input type="checkbox" name="symptom" value="warning_light"> Dashboard warning light</label><br>
+          <label><input type="checkbox" name="symptom" value="hard_start"> Hard to start</label><br>
+          <label><input type="checkbox" name="symptom" value="vibrations"> Strong vibrations</label><br>
+          <label><input type="checkbox" name="symptom" value="overheating"> Engine overheating</label><br>
+          <label><input type="checkbox" name="symptom" value="brake_noise"> Brake noise</label><br>
         </div>
 
         <div style="margin-top:12px; display:flex; gap:12px; align-items:center;">
@@ -67,8 +84,8 @@
         <input type="hidden" id="selectedArea" />
 
         <div style="margin-top:14px; display:flex; gap:12px;">
-          <button type="submit" style="background:#1f8dff; color:#fff; border:none; padding:10px 14px; border-radius:6px; cursor:pointer;">Siųsti registraciją</button>
-          <button type="button" onclick="resetForm()" style="background:#eee; border:1px solid #ddd; padding:10px 14px; border-radius:6px; cursor:pointer;">Išvalyti</button>
+          <button type="submit" style="background:#1f8dff; color:white; border:none; padding:10px 14px; border-radius:6px; cursor:pointer;">Siųsti registraciją</button>
+          <button type="button" onclick="resetForm()" style="background:#ddd; color:#333; border:none; padding:10px 14px; border-radius:6px; cursor:pointer;">Išvalyti</button>
         </div>
       </form>
 
@@ -80,64 +97,26 @@
       <div style="margin-bottom:12px; font-weight:700">Žemėlapis: pažymėkite vietą</div>
 
       <div class="car-top card">
-        <!-- The CSS shapes (see style.css) -->
         <div class="car-body">
-          <button class="hotspot" data-area="engine" title="Variklis">Engine</button>
-
-          <div class="row">
-            <button class="hotspot" data-area="front-left" title="Pr. kairė">FL</button>
-            <button class="hotspot" data-area="front-right" title="Pr. dešinė">FR</button>
-          </div>
-
-          <div class="row">
-            <button class="hotspot" data-area="center-left" title="Vidurys kairė">CL</button>
-            <button class="hotspot" data-area="center-right" title="Vidurys dešinė">CR</button>
-          </div>
-
-          <div class="row">
-            <button class="hotspot" data-area="rear-left" title="Gal. kairė">RL</button>
-            <button class="hotspot" data-area="rear-right" title="Gal. dešinė">RR</button>
-          </div>
-
-          <button class="hotspot" data-area="exhaust" title="Išmetimas">Exh</button>
+          <!-- simplified hotspots -->
+          <button class="hotspot" data-area="front">Priekis</button>
+          <button class="hotspot" data-area="rear">Galinė dalis</button>
+          <button class="hotspot" data-area="left">Kairė pusė</button>
+          <button class="hotspot" data-area="right">Dešinė pusė</button>
+          <button class="hotspot" data-area="engine">Variklio skyrius</button>
+          <button class="hotspot" data-area="interior">Salon / vidus</button>
         </div>
       </div>
 
-      <div style="margin-top:14px;" class="card">
-        <div style="font-weight:700">Pasirinkta vieta:</div>
-        <div id="pickedArea" class="small-muted" style="margin-top:6px">Nenurodyta</div>
-      </div>
-
-      <div style="margin-top:14px" class="card">
-        <div style="font-weight:700">sample</div>
-        <img src="sample.jpg" alt="sample" style="width:100%; border-radius:6px; margin-top:8px;"/>
-        <div class="small-muted" style="margin-top:8px">Important!!!</div>
-      </div>
+      <p class="small-muted" style="margin-top:8px;">Pasirinkite automobilio vietą, kurioje jaučiate problemą.</p>
     </aside>
-  </div>
 </div>
 
-<!-- Login modal (shared) -->
-<div id="loginModal" class="modal" style="display:none">
-  <div class="modal-card card">
-    <h3>Login (prototype)</h3>
-    <input id="loginUsername" placeholder="Username" />
-    <input id="loginPassword" placeholder="Password" type="password" />
-    <div style="display:flex; gap:8px;">
-      <button onclick="loginSimple()" style="flex:1; padding:8px">Login</button>
-      <button onclick="closeLoginModal()" style="flex:1; padding:8px">Cancel</button>
-    </div>
-    <p class="small-muted" style="margin-top:10px">Any username + password works. This creates a local user in the browser (localStorage).</p>
-  </div>
-</div>
+<!-- any global scripts would go here, e.g. app.js if you have it -->
+<!-- <script src="app.js"></script> -->
 
-<script src="app.js"></script>
-
-<!-- page specific JS -->
 <script>
-  // ensure header initializes
   document.addEventListener('DOMContentLoaded', () => {
-    // initApp from app.js already runs; ensure UI hookups
     initRepairPage();
   });
 
@@ -145,8 +124,9 @@
     // hotspots
     document.querySelectorAll('.car-top .hotspot').forEach(btn => {
       btn.addEventListener('click', () => {
-        // clear previous selection visuals
-        document.querySelectorAll('.car-top .hotspot.selected').forEach(x => x.classList.remove('selected'));
+        document
+          .querySelectorAll('.car-top .hotspot.selected')
+          .forEach(x => x.classList.remove('selected'));
         btn.classList.add('selected');
         const area = btn.getAttribute('data-area');
         document.getElementById('selectedArea').value = area;
@@ -154,20 +134,24 @@
       });
     });
 
-    // phone input: only digits allowed
+    // enforce numeric phone
     const phone = document.getElementById('phone');
-    phone.addEventListener('input', () => {
-      phone.value = phone.value.replace(/[^\d]/g, '').slice(0, 12);
-    });
+    if (phone) {
+      phone.addEventListener('input', () => {
+        phone.value = phone.value.replace(/[^\\d]/g, '').slice(0, 12);
+      });
+    }
 
-    // form submit
-    document.getElementById('repairForm').addEventListener('submit', (e) => {
-      e.preventDefault();
-      submitRepairForm();
-    });
+    const form = document.getElementById('repairForm');
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        submitRepairForm();
+      });
+    }
   }
 
-  function submitRepairForm() {
+  async function submitRepairForm() {
     const firstName = document.getElementById('firstName').value.trim();
     const lastName = document.getElementById('lastName').value.trim();
     const plate = document.getElementById('plate').value.trim();
@@ -181,25 +165,41 @@
       return;
     }
 
-    // gather symptoms
-    const symptoms = Array.from(document.querySelectorAll('input[name="symptom"]:checked')).map(c => c.value);
+    const symptoms = Array
+      .from(document.querySelectorAll('input[name="symptom"]:checked'))
+      .map(c => c.value);
 
-    const req = {
-      id: 'r' + Date.now(),
-      firstName, lastName, plate, phone, desc, pickup, selectedArea, symptoms,
-      createdAt: Date.now()
+    const payload = {
+      firstName,
+      lastName,
+      plate,
+      phone,
+      desc,
+      pickup,
+      selectedArea,
+      symptoms
     };
 
-    // save to localStorage array 'repairRequests'
-    const existing = JSON.parse(localStorage.getItem('repairRequests') || '[]');
-    existing.push(req);
-    localStorage.setItem('repairRequests', JSON.stringify(existing));
+    try {
+      const res = await fetch('repair_submit.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
 
-    // feedback
-    showFormMsg('Registracija išsaugota. Mes susisieksime netrukus. (ID: ' + req.id + ')', false);
+      if (!res.ok) throw new Error('Server error');
 
-    // reset (keep selected area? we'll clear everything)
-    resetForm();
+      const data = await res.json();
+
+      if (data.ok) {
+        showFormMsg('Registracija išsaugota. Mes susisieksime netrukus. (ID: ' + data.id + ')', false);
+        resetForm();
+      } else {
+        showFormMsg('Nepavyko išsaugoti registracijos.', true);
+      }
+    } catch (err) {
+      showFormMsg('Serverio klaida. Bandykite dar kartą.', true);
+    }
   }
 
   function showFormMsg(text, isError) {
@@ -210,7 +210,6 @@
     el.style.background = isError ? '#ffe3e3' : '#e6ffed';
     el.style.color = isError ? '#8b0000' : '#0b6b2a';
     el.textContent = text;
-    // hide after 6s
     setTimeout(() => { el.style.display = 'none'; }, 6000);
   }
 
@@ -218,11 +217,13 @@
     document.getElementById('repairForm').reset();
     document.getElementById('selectedArea').value = '';
     document.getElementById('pickedArea').textContent = 'Nenurodyta';
-    document.querySelectorAll('.car-top .hotspot.selected').forEach(x => x.classList.remove('selected'));
+    document
+      .querySelectorAll('.car-top .hotspot.selected')
+      .forEach(x => x.classList.remove('selected'));
     document.getElementById('formMsg').style.display = 'none';
   }
 </script>
 
-
 </body>
 </html>
+
