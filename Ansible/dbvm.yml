@@ -1,59 +1,135 @@
-- name: Create and set-up database VM
+---
+- name: Create Database virtual machine
   hosts: localhost
   gather_facts: yes
   vars_files:
     - secrets.yml
   vars:
-    ansible_python_interpreter: "/home/aisi7936/MachineRepairShop/Ansible/venv/bin/python3" 
+    ansible_python_interpreter: "/home/aisi7936/MachineRepairShop/Ansible/venv/bin/python3"
+    vm_password: "db"
+    template_id: 3036
 
   tasks:
-    - name: Create VM, extract variables
+    - name: Ensure SSH key exists
+      community.crypto.openssh_keypair:
+        path: "/home/aisi7936/.ssh/id_ed25519"
+        type: ed25519
+        state: present
+
+    - name: Create VM from template
       one_vm:
         api_url: "https://grid5.mif.vu.lt/cloud3/RPC2"
-        api_username: "{{ nebula_user }}"
-        api_password: "{{ nebula_password }}"
-        template_id: 1737
-        count: 1
-        cpu: 1
-        memory: 1 GB
-        disk_size: 10 GB
+        api_username: "{{ db_username }}"
+        api_password: "{{ db_password }}"
+        template_id: "{{ template_id }}"
         state: present
         wait: yes
         attributes:
-          name: db-vm
-          TCP_PORT_FORWARDING: "80"
-      register: result
+          name: "Database-VM"
+      register: vm_result
 
-    - name: VM info
-      debug:
-        var: result  # note - missing TCP port field until VM fully starts
-
-    - name: Set convenient variables
+    - name: Extract VM IP
       set_fact:
-        vm_id: "{{ result.instances[0].vm_id }}"
-        vm_private_ip: "{{ result.instances[0].networks[0].ip }}"
-        vm_owner_name: "{{ result.instances[0].owner_name }}"
+        vm_private_ip: "{{ vm_result.instances[0].networks[0].ip }}"
 
-    - name: Wait for full bootstrap. TCP port opening as indicator
+    - name: Wait for SSH
       wait_for:
         host: "{{ vm_private_ip }}"
         port: 22
         timeout: 300
+        delay: 15
 
-    - name: Show parsed VM details
-      debug:
-        msg: >
-          VM {{ vm_id }} is running at IP {{ vm_private_ip }},
-          owned by {{ vm_owner_name }}\
-  
-    - name: Add VM to DB host group
+    - name: Install SSH key
+      command: >
+        sshpass -p "{{ vm_password }}"
+        ssh-copy-id -i "/home/aisi7936/.ssh/id_ed25519.pub"
+        -o StrictHostKeyChecking=no
+        {{ db_username }}@{{ vm_private_ip }}
+
+    - name: Register host for DB group
       add_host:
         name: "{{ vm_private_ip }}"
         groups: DB
+        ansible_user: "{{ db_username }}"
+        ansible_ssh_private_key_file: "/home/aisi7936/.ssh/id_ed25519"
+        ansible_ssh_common_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+        ansible_become: yes
+        ansible_become_password: "{{ db_sudo_password }}"
+        ansible_become_method: sudo
 
-    - name: Define SSH connection details for DB VM
-      set_fact:
-        ansible_user: ubuntu
+- name: Configure DB VM with Docker + MySQL
+  hosts: DB
+  vars_files:
+    - secrets.yml
+  become: yes
+  gather_facts: yes
+  vars:
+    db_root_password: dbpassword
+    db_name: machinerepairshop
 
+  tasks:
+    - name: Ensure apt lists folder exists (fix missing lock error)
+      file:
+        path: /var/lib/apt/lists
+        state: directory
+        mode: '0755'
 
+    - name: Update apt
+      apt:
+        update_cache: yes
 
+    - name: Install required dependencies
+      apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+        state: present
+        update_cache: yes
+
+    - name: Add Docker GPG key (Ubuntu 24.04 format)
+      shell: |
+        install -m 0755 -d /etc/apt/keyrings
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
+        | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+        chmod a+r /etc/apt/keyrings/docker.gpg
+
+    - name: Add Docker repo for Ubuntu 24.04 Noble
+      copy:
+        dest: /etc/apt/sources.list.d/docker.list
+        content: |
+          deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu noble stable
+
+    - name: Update apt again
+      apt:
+        update_cache: yes
+
+    - name: Install Docker
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+        state: present
+
+    - name: Ensure python3-requests and python3-docker apt packages installed
+      become: yes
+      apt:
+        name:
+          - python3-requests
+          - python3-docker
+        state: present
+        update_cache: yes
+
+    - name: Run MariaDB Docker Container
+      community.docker.docker_container:
+        name: mysql_db
+        image: mariadb:10.11
+        state: started
+        restart_policy: always
+        env:
+          MARIADB_ROOT_PASSWORD: "{{ db_root_password }}"
+          MARIADB_DATABASE: "{{ db_name }}"
+        published_ports:
+          - "3306:3306"
