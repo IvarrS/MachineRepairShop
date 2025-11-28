@@ -1,0 +1,8 @@
+services:
+  apache:
+    build: .
+    container_name: my-apache
+    volumes:
+      - ./Web:/usr/local/apache2/htdocs:ro
+    ports:
+      - "80:80"
