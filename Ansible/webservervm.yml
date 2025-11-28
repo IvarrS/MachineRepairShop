@@ -169,5 +169,5 @@
     - name: Run Docker Compose services
       command: docker compose up -d --build
       args:
-        chdir: "/home/{{ webservervm_user }}/webserver_vm"
+        chdir: "/home/{{ webservervm_user }}/MachineRepairShop/webserver_vm"
 
