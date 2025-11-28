@@ -7,8 +7,8 @@
   vars:
     # User configuration
     ansible_python_interpreter: "/home/aisi7936/.ansible-venv/bin/python3" 
-    desktop_user: "client"
-    desktop_password: "client"
+    vm_login_user: "client" 
+    vm_login_pass: "client"
     browser_port: 90
     
   tasks:
@@ -448,5 +448,6 @@
           - "Connection info saved to: /root/connection_info.txt"
           - ""
           - "============================================"
+
 
 
