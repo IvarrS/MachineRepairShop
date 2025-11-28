@@ -156,13 +156,13 @@
 
     - name: Copy files to the VM
       copy:
-        src: "/home/{{ webservervm_user }}/test/MachineRepairShop/Misc/webserver_vm"
+        src: "/home/joju0195/MachineRepairShop/Misc/webserver_vm"
         dest: "/home/{{ webservervm_user }}/MachineRepairShop/Misc"
         mode: '0644'
 
     - name: Copy files to the VM2
       copy:
-        src: "/home/{{ webservervm_user }}/test/MachineRepairShop/Web"
+        src: "/home/joju0195/MachineRepairShop/Web"
         dest: "/home/{{ webservervm_user }}/MachineRepairShop"
         mode: '0644'
 
@@ -170,3 +170,4 @@
       command: docker compose up -d --build
       args:
         chdir: "/home/{{ webservervm_user }}/webserver_vm"
+
