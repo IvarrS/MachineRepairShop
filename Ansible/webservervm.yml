@@ -82,6 +82,8 @@
       add_host:
         name: "{{ webservervm_user }}@{{ vm_private_ip }}"
         groups: webserver_vm
+        vm_private_ip: "{{ vm_private_ip }}"
+        webservervm_user: "{{ webservervm_user }}
 
     - name: Copy SSH public key to the VM # one usr account must contain [PASSWORD] variable, as well as [PASSWORD] must be contained in vault
       shell: sshpass -p "{{ webserver_sudo_password }}" ssh-copy-id -o StrictHostKeyChecking=no "{{ webservervm_user }}"@"{{ vm_private_ip }}"
