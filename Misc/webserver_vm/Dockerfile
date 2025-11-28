@@ -1,3 +1,3 @@
 FROM httpd:2.4
 
-COPY ./wsite/ /usr/local/apache2/htdocs/
+COPY ./Web/ /usr/local/apache2/htdocs/
