@@ -160,13 +160,13 @@
 
     - name: Copy files to the VM
       copy:
-        src: "/home/joju0195/MachineRepairShop/Misc/webserver_vm"
+        src: "{{ lookup('env', 'HOME') }}/MachineRepairShop/Misc/webserver_vm"
         dest: "/home/{{ webservervm_user }}/MachineRepairShop/Misc"
         mode: '0644'
 
     - name: Copy files to the VM2
       copy:
-        src: "/home/joju0195/MachineRepairShop/Web"
+        src: "{{ lookup('env', 'HOME') }}/MachineRepairShop/Web"
         dest: "/home/{{ webservervm_user }}/MachineRepairShop/Misc/webserver_vm"
         mode: '0644'
 
