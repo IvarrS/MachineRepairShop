@@ -3,6 +3,6 @@ services:
     build: .
     container_name: my-apache
     volumes:
-      - ./Web:/usr/local/apache2/htdocs:ro
+      - ./Web:/var/www/html:ro
     ports:
       - "80:80"
