@@ -1,9 +1,8 @@
 <?php
-// config.php - shared database connection
 
 $DB_HOST = 'YOUR_DB_HOST_HERE';
 $DB_NAME = 'machinerepairshop';
-$DB_USER = 'YOUR_DB_USERNAME_HERE';
+$DB_USER = 'autu1151';
 $DB_PASS = 'db';
 
 try {
