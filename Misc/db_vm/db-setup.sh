@@ -5,6 +5,11 @@ set -e
 mkdir -p /run/mysqld
 chown mysql:mysql /run/mysqld
 
+cat > /etc/mysql/conf.d/bind.cnf <<EOF
+[mysqld]
+bind-address = 0.0.0.0
+EOF
+
 mysqld_safe --skip-grant-tables &
 MYSQL_PID=$!
 
