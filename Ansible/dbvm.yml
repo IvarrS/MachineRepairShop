@@ -5,11 +5,14 @@
   vars_files:
     - secrets.yml
   vars:
-    ansible_python_interpreter: "/home/joju0195/.ansible-venv/bin/python3"
     vm_password: "db"
     template_id: 3036
 
   tasks:
+    - name: Set interpreter path
+      set_fact:
+        ansible_python_interpreter: "{{ ansible_env.HOME }}/.ansible-venv/bin/python3"
+  
     - name: Ensure SSH key exists
       community.crypto.openssh_keypair:
         path: "/home/joju0195/.ssh/id_ed25519"
