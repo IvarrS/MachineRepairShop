@@ -32,6 +32,13 @@
       set_fact:
         vm_private_ip: "{{ vm_result.instances[0].networks[0].ip }}"
 
+    - name: Update config.php with db private ip
+      lineinfile:
+        path: /home/joju0195/MachineRepairShop/Web/config.php
+        regexp: "YOUR_DB_HOST_HERE"
+        line: "$DB_HOST = '{{ vm_private_ip }}';"
+        backrefs: no
+
     - name: Wait for SSH
       wait_for:
         host: "{{ vm_private_ip }}"
