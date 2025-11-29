@@ -48,7 +48,7 @@ echo "Configuring..."
   --enable-ssl \
   --enable-cgi \
   --enable-rewrite \
-  --with-mpm=event \
+  --with-mpm=prefork \
   --with-included-apr \
   --enable-mods-shared=all
 
