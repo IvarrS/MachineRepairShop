@@ -2,5 +2,4 @@
 
 - import_playbook: dbvm.yml
 - import_playbook: webservervm.yml
-- import_playbook: client.yml 
 - import_playbook: dbaccess.yml
