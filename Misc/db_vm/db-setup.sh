@@ -37,13 +37,13 @@ mysqld_safe &
 MYSQL_PID=$!
 
 for i in {1..30}; do
-    if mysql -uroot -p${MARIADB_ROOT_PASSWORD} -e "SELECT 1" 2>/dev/null; then
+    if mysql -h 127.0.0.1 -uroot -p${MARIADB_ROOT_PASSWORD} -e "SELECT 1" 2>/dev/null; then
         break
     fi
     sleep 1
 done
 
-mysql -uroot -p${MARIADB_ROOT_PASSWORD} ${MARIADB_DATABASE} < /docker-entrypoint-initdb.d/data.sql
+mysql -h 127.0.0.1 -uroot -p${MARIADB_ROOT_PASSWORD} ${MARIADB_DATABASE} < /docker-entrypoint-initdb.d/data.sql
 IMPORT_EXIT_CODE=$?
 
 
