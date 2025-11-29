@@ -138,7 +138,7 @@
     const phone = document.getElementById('phone');
     if (phone) {
       phone.addEventListener('input', () => {
-        phone.value = phone.value.replace(/[^\\d]/g, '').slice(0, 12);
+        phone.value = phone.value.replace(/\D/g, '').slice(0, 12);
       });
     }
 
