@@ -15,7 +15,7 @@
       community.mysql.mysql_user:
         login_user: root
         login_password: "dbpassword"
-        login_host: "127.0.0.1"
+        login_host: "{{ inventory_hostname }}"
         name: "{{ hostvars[item].webservervm_user }}"
         host: "{{ hostvars[item].vm_private_ip }}"
         password: "db"
