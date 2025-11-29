@@ -4,10 +4,12 @@
   gather_facts: yes
   vars_files:
     - secrets.yml
-  vars:
-    ansible_python_interpreter: "/home/joju0195/.ansible-venv/bin/python3"
 
   tasks:
+    - name: Set interpreter path
+      set_fact:
+        ansible_python_interpreter: "{{ ansible_env.HOME }}/.ansible-venv/bin/python3"
+    
     - name: Create VM, extract variables
       one_vm:
         api_url: "https://grid5.mif.vu.lt/cloud3/RPC2"
