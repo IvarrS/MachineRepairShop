@@ -52,13 +52,6 @@ ansible-galaxy collection install community.general
 echo "=== Installing opennebula-tools ==="
 sudo apt-get install -y opennebula-tools
 
-echo "=== Cloning MachineRepairShop repo ==="
-if [ ! -d "$HOME/MachineRepairShop" ]; then
-    git clone https://github.com/IvarrS/MachineRepairShop.git "$HOME/MachineRepairShop"
-else
-    echo "Repository already exists at $HOME/MachineRepairShop"
-fi
-
 cd ~/MachineRepairShop/Ansible
 
-ansible-playbook main.yml -i inv.ini --vault-password-file password
+ansible-playbook main.yml --vault-password-file password
