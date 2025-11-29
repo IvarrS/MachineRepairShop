@@ -131,24 +131,28 @@
           - python3-docker
         state: present
         update_cache: yes
-    - name: Copy SQL data
+
+    - name: Copy over docker
       copy:
-        src: "{{ lookup('env', 'HOME') }}/MachineRepairShop/Misc/data.sql"
-        dest: /home/{{ ansible_user }}/data.sql
-        mode: '0644'    
+        src: "{{ lookup('env', 'HOME') }}/MachineRepairShop/Misc/db_vm/"
+        dest: /home/{{ ansible_user }}/db/
+        owner: "{{ ansible_user }}"
+        mode: '0755'
 
+    - name: Build MariaDB image
+      community.docker.docker_image:
+        name: mariadb-custom
+        tag: latest
+        source: build
+        build:
+          path: /home/{{ ansible_user }}/db/
 
-    - name: Run MariaDB Docker Container
+    - name: Run MariaDB image
       community.docker.docker_container:
-        name: mysql_db
-        image: mariadb:10.11
+        name: mariadb
+        image: mariadb-custom:latest
         state: started
         restart_policy: always
-        env:
-          MARIADB_ROOT_PASSWORD: "{{ db_root_password }}"
-          MARIADB_DATABASE: "{{ db_name }}"
         published_ports:
           - "3306:3306"
-        volumes:
-          - /home/{{ ansible_user }}/data.sql:/docker-entrypoint-initdb.d/data.sql
 
