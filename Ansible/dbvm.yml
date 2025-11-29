@@ -15,7 +15,7 @@
   
     - name: Ensure SSH key exists
       community.crypto.openssh_keypair:
-        path: "/home/joju0195/.ssh/id_ed25519"
+        path: "{{ ansible_env.HOME }}/.ssh/id_ed25519"
         type: ed25519
         state: present
 
@@ -37,7 +37,7 @@
 
     - name: Update config.php with db private ip
       lineinfile:
-        path: /home/joju0195/MachineRepairShop/Web/config.php
+        path: "{{ ansible_env.HOME }}/MachineRepairShop/Web/config.php"
         regexp: "YOUR_DB_HOST_HERE"
         line: "$DB_HOST = '{{ vm_private_ip }}';"
         backrefs: no
@@ -52,7 +52,7 @@
     - name: Install SSH key
       command: >
         sshpass -p "{{ vm_password }}"
-        ssh-copy-id -i "/home/joju0195/.ssh/id_ed25519.pub"
+        ssh-copy-id -i "{{ ansible_env.HOME }}/.ssh/id_ed25519.pub"
         -o StrictHostKeyChecking=no
         {{ db_username }}@{{ vm_private_ip }}
 
@@ -61,7 +61,7 @@
         name: "{{ vm_private_ip }}"
         groups: DB
         ansible_user: "{{ db_username }}"
-        ansible_ssh_private_key_file: "/home/joju0195/.ssh/id_ed25519"
+        ansible_ssh_private_key_file: "{{ ansible_env.HOME }}/.ssh/id_ed25519"
         ansible_ssh_common_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
         ansible_become: yes
         ansible_become_password: "{{ db_sudo_password }}"
@@ -133,7 +133,7 @@
         update_cache: yes
     - name: Copy SQL data
       copy:
-        src: /home/joju0195/MachineRepairShop/Misc/data.sql
+        src: "{{ lookup('env', 'HOME') }}/MachineRepairShop/Misc/data.sql"
         dest: /home/{{ ansible_user }}/data.sql
         mode: '0644'    
 
