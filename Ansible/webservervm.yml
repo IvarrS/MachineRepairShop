@@ -166,6 +166,12 @@
 
     - name: Copy files to the VM2
       copy:
+        src: "{{ lookup('env', 'HOME') }}/MachineRepairShop/apache2_install.sh"
+        dest: "/home/{{ webservervm_user }}/MachineRepairShop/Misc/webserver_vm"
+        mode: '0644'
+
+    - name: Copy files to the VM3
+      copy:
         src: "{{ lookup('env', 'HOME') }}/MachineRepairShop/Web"
         dest: "/home/{{ webservervm_user }}/MachineRepairShop/Misc/webserver_vm"
         mode: '0644'
