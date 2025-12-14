@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-APACHE_VERSION="2.4.65"
+APACHE_VERSION="2.4.66"
 APR_VERSION="1.7.6"
 APR_UTIL_VERSION="1.6.3"
 
